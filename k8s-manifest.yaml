@@ -1,0 +1,36 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: jenkins-slaves
+spec:
+  replicas: 1
+  template:
+    metadata:
+      name: jenkins-slaves
+      labels:
+        app: jenkins-slave
+    spec:
+      securityContext:
+        fsGroup: 1003    # Group ID of docker group on k8s nodes.
+      containers:
+        - name: jenkins-slaves
+          image: papanito/jnlp-slave:latest
+          args: ["-url", "https://wyssmann.intra/jenkins"]
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: dockersock
+              mountPath: "/var/run/docker.sock"
+          env:
+            - name: JENKINS_USER
+              value: "xxxx"
+            - name: JENKINS_API_TOKEN
+              value: "xxxxx"
+            - name: JENKINS_AGENT_LABELS
+              value: "linux"
+            - name: ENVIRONMENT_VARS
+              value: "{'key':+'JAVA_HOME',+'value':+'/docker-java-home'},+{'key':+'JENKINS_HOME',+'value':+'/home/jenkins'}"
+            - name: LOCATIONS
+              value: "{'key':+'hudson.plugins.git.GitTool\\$DescriptorImpl@Default',+'home':+'/usr/bin/git'},+{'key':+'hudson.model.JDK\\$DescriptorImpl@JAVA-8',+'home':+'/usr/bin/java'},+{'key':+'hudson.tasks.Maven\\$MavenInstallation\\$DescriptorImpl@MAVEN-3.5.2',+'home':+'/usr/bin/mvn'}"
+      volumes:
+      - name: dockersock
+        hostPath:
